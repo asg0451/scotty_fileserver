@@ -4,3 +4,4 @@ cabal.sandbox.config
 auth.txt
 served_files/*
 nohup.out
+sessions.sqlite3

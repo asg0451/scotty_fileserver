@@ -36,6 +36,7 @@ import           Network.Wai.Parse                    as N (fileContent,
                                                             fileName)
 import           Text.Blaze.Html.Renderer.Text        (renderHtml)
 import           Web.Scotty                           as S
+import           Web.Scotty.Login.Session
 
 -- run with environment var PORT set to whatever port
 -- for auth, make a file "auth.txt"
@@ -45,6 +46,7 @@ main = do envPort <- getEnv "PORT"
           h <- openFile "auth.txt" ReadMode
           c <- hGetContents h
           let l = P.lines c
+          initializeCookieDb'
           scottyOpts
             (Options 1 (setPort (read envPort) defaultSettings)) $ do
               middleware $
@@ -62,39 +64,72 @@ main = do envPort <- getEnv "PORT"
 routes :: ScottyM ()
 routes = do S.get "/" $ blaze $ template "HOME" homePage
 
-            S.get "/files/" $ serveDir ""
+            getAuthed "/files/" $ serveDir ""
 
-            S.get (regex "^/files/(.+)$") $ do (f :: String) <- param "1"
-                                               b <- liftIO $ doesFileExist (prefix <> f)
-                                               unless b $ next
-                                               liftIO $ print $ "opening file: " ++ f
-                                               file' f
+            getAuthed (regex "^/files/(.+)$") $ do
+              (f :: String) <- param "1"
+              b <- liftIO $ doesFileExist (prefix <> f)
+              unless b $ next
+              liftIO $ print $ "opening file: " ++ f
+              file' f
 
-            S.get (regex "^/files/(.+)$") $ do dir <- param "1"
-                                               liftIO $ print $ "opening dir: " ++ dir
-                                               serveDir dir
+            getAuthed (regex "^/files/(.+)$") $ do
+              dir <- param "1"
+              liftIO $ print $ "opening dir: " ++ dir
+              serveDir dir
 
-            S.get "/upload" $ blaze uploadPage
+            getAuthed "/upload" $ blaze uploadPage
 
-            S.post "/uploaded" $ do fs <- files
-                                    liftIO $ handleFiles fs
-                                    html $ T.pack $ show fs  -- does not get displayed when using dropzone
+            postAuthed "/uploaded" $ do
+              fs <- files
+              liftIO $ handleFiles fs
+              html $ T.pack $ show fs
 
-            S.get "/donnerator" $ do dism <- liftIO getDonnered
-                                     blaze $ donnerPage dism
+            getAuthed "/donnerator" $ do
+              dism <- liftIO getDonnered
+              blaze $ donnerPage dism
 
-            S.get "/donneradd" $ blaze donnerAddPage
+            getAuthed "/donneradd" $ blaze donnerAddPage
 
-            S.post "/donneradd" $ do (line :: String) <- param "donner_line"
-                                     liftIO $
-                                       appendFile "/home/miles/ruby/donnerator/donnerisms.txt" $ line ++ "\n"
-                                     redirect "/donnerfile"
+            postAuthed "/donneradd" $ do
+              (line :: String) <- param "donner_line"
+              liftIO $
+                appendFile "/home/miles/ruby/donnerator/donnerisms.txt" $ line ++ "\n"
+              redirect "/donnerfile"
 
-            S.get "/donnerfile" $ file "/home/miles/ruby/donnerator/donnerisms.txt"
+            getAuthed "/donnerfile" $
+              file "/home/miles/ruby/donnerator/donnerisms.txt"
+
+            S.get "/videojstest" $ blaze videojstest
+
+            loginRoutes
+
+            getAuthed "/authed" $ S.text "authed"
+
+            S.get "/staticpage1" $ S.text "some static page"
 
             S.get "/favicon.ico" $ file "static/favicon.ico"
-
             S.notFound $ html "not here"
+
+
+loginRoutes :: ScottyM ()
+loginRoutes = do
+  S.get "/login" $ S.html $ T.pack $ unlines $
+    ["<form method=\"POST\" action=\"/login\">"
+    , "<input type=\"text\" name=\"username\">"
+    , "<input type=\"password\" name=\"password\">"
+    , "<input type=\"submit\" name=\"login\" value=\"login\">"
+    , "</form>"]
+  S.post "/login" $ do
+    (usn :: String) <- param "username"
+    (pass :: String) <- param "password"
+    if usn == "guest" && pass == "password"
+      then do addSession'
+              redirect "/authed"
+      else do redirect "/denied"
+  S.get "/denied" $ S.text "acces denied"
+
+
 
 blaze = S.html . renderHtml
 
@@ -144,3 +179,13 @@ handleFiles fs = let fis = map snd fs
 getDonnered :: IO String
 getDonnered =  do (_, Just hout, _, _) <- createProcess (proc "./donnerate.sh" []) { std_out = CreatePipe, cwd = Just "/home/miles/ruby/donnerator" }
                   hGetContents hout
+
+conf :: SessionConfig
+conf = defaultSessionConfig
+
+authCheck' = authCheck conf (redirect "/denied")
+addSession' = addSession conf
+initializeCookieDb' = initializeCookieDb conf
+
+getAuthed  r a = S.get r $ authCheck' a
+postAuthed r a = S.post r $ authCheck' a

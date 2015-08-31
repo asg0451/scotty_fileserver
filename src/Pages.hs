@@ -6,6 +6,7 @@ module Pages (template
              , homePage
              , donnerPage
              , donnerAddPage
+             , videojstest
              ) where
 
 import           Types
@@ -64,22 +65,40 @@ template title body = do
   docType
   html ! lang "en" $ do
     H.head $ do meta ! charset "utf-8"
-                meta ! name "viewport" ! content "width=device-width, initial-scale=1"
+                meta ! name "viewport" ! content
+                  "width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0"
                 link ! rel "shortcut icon" ! type_ "image/x-icon" ! href "/favicon.ico"
                 H.title $ toHtml title
                 defaultIncludes
     H.body $ do body
                 theFooter
 
+templateWithHead :: String -> Html -> Html -> Html
+templateWithHead title h body = do
+  docType
+  html ! lang "en" $ do
+    H.head $ do meta ! charset "utf-8"
+                meta ! name "viewport" ! content
+                  "width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0"
+                link ! rel "shortcut icon" ! type_ "image/x-icon" ! href "/favicon.ico"
+                H.title $ toHtml title
+                defaultIncludes
+                h
+    H.body $ do body
+                theFooter
+
+
 theFooter :: Html
-theFooter = nav ! class_ "navbar navbar-default navbar-fixed-bottom" $
-            H.div ! class_ "container" $
-            H.div ! class_ "footer" $ do
-              a ! class_ "navbar-link" ! href "/files/"     $ "file serving"
-              a ! class_ "navbar-link" ! href "/upload"     $ "file uploading"
-              a ! class_ "navbar-link" ! href "/donnerator" $ "donnerisms"
-              a ! class_ "navbar-link" ! href "/donnerfile" $ "donnerfile"
-              a ! class_ "navbar-link" ! href "/donneradd"  $ "add to donnerFile"
+theFooter =
+  nav ! class_ "navbar navbar-default navbar-fixed-bottom" $ do
+    H.div ! class_ "container" $ do
+      H.div ! class_ "footer" $ do
+        a ! class_ "navbar-link" ! href "/login"      $ "login"
+        a ! class_ "navbar-link" ! href "/files"      $ "file serving"
+        a ! class_ "navbar-link" ! href "/upload"     $ "file uploading"
+        a ! class_ "navbar-link" ! href "/donnerator" $ "donnerisms"
+        a ! class_ "navbar-link" ! href "/donnerfile" $ "donnerfile"
+        a ! class_ "navbar-link" ! href "/donneradd"  $ "add to donnerFile"
 
 defaultIncludes :: Html
 defaultIncludes = do script mempty !
@@ -109,3 +128,13 @@ donnerAddPage = template "Add to Donnerfile" $ do
   H.form ! A.method "POST" ! action "/donneradd" $ do
     input ! type_ "text" ! name "donner_line" ! size "70"
     input ! type_ "submit" ! value "SUBMIT"
+
+videojstest :: Html
+videojstest = templateWithHead "video.js Test"
+              (do H.link ! href "//vjs.zencdn.net/4.12/video-js.css" ! rel "stylesheet"
+                  script mempty ! src "//vjs.zencdn.net/4.12/video.js")
+              (do video ! A.id "example_video_1" ! class_ "video-js vjs-default-skin"
+                    ! controls mempty ! preload "auto" ! width "640" ! height "264"
+--                    ! poster "http://video-js.zencoder.com/oceans-clip.png"
+                    $ do source ! src "/served_files/tv/Rick_and_Morty/Rick and Morty S01E06.mkv" ! type_ "video/webm"
+                         p ! class_ "vjs-no-js" $ "To view this video please enable JavaScript...")

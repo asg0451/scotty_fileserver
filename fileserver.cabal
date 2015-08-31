@@ -15,6 +15,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 executable one
+  hs-source-dirs:      src
   main-is:             Main.hs
   -- other-modules:
   -- other-extensions:
@@ -35,6 +36,8 @@ executable one
                      , old-locale
 -- for donnerator
                      , process
+-- for static site
+                     , scotty-login-session
 
   ghc-options: -fwarn-unused-imports -O2
   -- hs-source-dirs:
