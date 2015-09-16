@@ -1,6 +1,6 @@
+{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
 module Main where
 import           Pages
 import           Types
@@ -26,6 +26,7 @@ import           System.Locale                        (defaultTimeLocale)
 import qualified System.Posix.Files                   as F
 import           System.Process
 
+import           Data.Time.Clock                      (NominalDiffTime)
 import           Network.Wai.Handler.Warp             (Settings (..),
                                                        defaultSettings, setPort)
 import           Network.Wai.Middleware.AddHeaders    (addHeaders)
@@ -43,9 +44,11 @@ import           Web.Scotty.Login.Session
 -- containing two lines: username and then password
 
 main = do envPort <- getEnv "PORT"
+          !envHttpAuth <- getEnv "AUTH" -- True or False
           h <- openFile "auth.txt" ReadMode
           c <- hGetContents h
           let l = P.lines c
+              !authp = (read envHttpAuth) :: Bool
           initializeCookieDb'
           scottyOpts
             (Options 1 (setPort (read envPort) defaultSettings)) $ do
@@ -54,7 +57,7 @@ main = do envPort <- getEnv "PORT"
               middleware logStdoutDev
               middleware $ staticPolicy $
                 hasPrefix "static/" <|> hasPrefix "served_files/"
-              when (P.length l == 2) $ do
+              when (P.length l == 2 && authp) $ do
                 let usn = head l
                     passwd = l !! 1
                 middleware $ Auth.basicAuth
@@ -64,52 +67,54 @@ main = do envPort <- getEnv "PORT"
 routes :: ScottyM ()
 routes = do S.get "/" $ blaze $ template "HOME" homePage
 
-            getAuthed "/files/" $ serveDir ""
-
-            getAuthed (regex "^/files/(.+)$") $ do
-              (f :: String) <- param "1"
-              b <- liftIO $ doesFileExist (prefix <> f)
-              unless b $ next
-              liftIO $ print $ "opening file: " ++ f
-              file' f
-
-            getAuthed (regex "^/files/(.+)$") $ do
-              dir <- param "1"
-              liftIO $ print $ "opening dir: " ++ dir
-              serveDir dir
-
-            getAuthed "/upload" $ blaze uploadPage
-
-            postAuthed "/uploaded" $ do
-              fs <- files
-              liftIO $ handleFiles fs
-              html $ T.pack $ show fs
-
-            getAuthed "/donnerator" $ do
-              dism <- liftIO getDonnered
-              blaze $ donnerPage dism
-
-            getAuthed "/donneradd" $ blaze donnerAddPage
-
-            postAuthed "/donneradd" $ do
-              (line :: String) <- param "donner_line"
-              liftIO $
-                appendFile "/home/miles/ruby/donnerator/donnerisms.txt" $ line ++ "\n"
-              redirect "/donnerfile"
-
-            getAuthed "/donnerfile" $
-              file "/home/miles/ruby/donnerator/donnerisms.txt"
-
             S.get "/videojstest" $ blaze videojstest
 
             loginRoutes
 
-            getAuthed "/authed" $ S.text "authed"
+            authedRoutes
 
             S.get "/staticpage1" $ S.text "some static page"
 
             S.get "/favicon.ico" $ file "static/favicon.ico"
             S.notFound $ html "not here"
+
+authedRoutes :: ScottyM ()
+authedRoutes = do
+  get "/files/" $ serveDir ""
+
+  get (regex "^/files/(.+)$") $ do
+    (f :: String) <- param "1"
+    b <- liftIO $ doesFileExist (prefix <> f)
+    unless b $ next
+    liftIO $ print $ "opening file: " ++ f
+    file' f
+
+  get (regex "^/files/(.+)$") $ do
+    dir <- param "1"
+    liftIO $ print $ "opening dir: " ++ dir
+    serveDir dir
+
+  getAuthed "/upload" $ blaze uploadPage
+
+  postAuthed "/uploaded" $ do
+    fs <- files
+    liftIO $ handleFiles fs
+    html $ T.pack $ show fs
+
+  getAuthed "/donnerator" $ do
+    dism <- liftIO getDonnered
+    blaze $ donnerPage dism
+
+  getAuthed "/donneradd" $ blaze donnerAddPage
+
+  postAuthed "/donneradd" $ do
+    (line :: String) <- param "donner_line"
+    liftIO $
+      appendFile "/home/miles/ruby/donnerator/donnerisms.txt" $ line ++ "\n"
+    redirect "/donnerfile"
+
+  getAuthed "/donnerfile" $
+    file "/home/miles/ruby/donnerator/donnerisms.txt"
 
 
 loginRoutes :: ScottyM ()
@@ -125,7 +130,7 @@ loginRoutes = do
     (pass :: String) <- param "password"
     if usn == "guest" && pass == "password"
       then do addSession'
-              redirect "/authed"
+              redirect "/"
       else do redirect "/denied"
   S.get "/denied" $ S.text "acces denied"
 
@@ -182,10 +187,16 @@ getDonnered =  do (_, Just hout, _, _) <- createProcess (proc "./donnerate.sh" [
 
 conf :: SessionConfig
 conf = defaultSessionConfig
+{-
+data SessionConfig = SessionConfig { dbName             :: String
+                                   , syncInterval       :: Int --seconds
+                                   , expirationInterval :: NominalDiffTime
+                                   }
 
-authCheck' = authCheck conf (redirect "/denied")
+-}
+authCheck' = authCheck (redirect "/denied")
 addSession' = addSession conf
 initializeCookieDb' = initializeCookieDb conf
 
-getAuthed  r a = S.get r $ authCheck' a
+getAuthed  r a = S.get  r $ authCheck' a
 postAuthed r a = S.post r $ authCheck' a
