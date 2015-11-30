@@ -1,0 +1,9 @@
+flags: {}
+packages:
+- '.'
+- location:
+    git: git@github.com:asg0451/scotty-login-session
+    commit: 56da3194db28abbd930dff5c7b0dec2c2f659434
+extra-deps:
+- scotty-cookie-0.1.0.3
+resolver: lts-3.1

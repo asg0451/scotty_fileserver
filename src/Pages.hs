@@ -7,6 +7,7 @@ module Pages (template
              , donnerPage
              , donnerAddPage
              , videojstest
+             , addTorrentPage
              ) where
 
 import           Types
@@ -19,6 +20,13 @@ import qualified Text.Blaze.Html5.Attributes as A
 import           Data.List                   (isSuffixOf, sort)
 import           Data.Monoid
 import qualified Data.Text.Lazy              as T
+
+
+addTorrentPage :: Html
+addTorrentPage = template "add a torrent" $ do
+                   H.form ! A.method "POST" ! action "/torrentadd" $ do
+                                              input ! type_ "text" ! name "magnet" ! size "70"
+                                              input ! type_ "submit" ! value "ADD"
 
 renderText :: T.Text -> Html
 renderText text = html $ body $ p $ toHtml text

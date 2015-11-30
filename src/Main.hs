@@ -5,6 +5,7 @@ module Main where
 import           Pages
 import           Types
 
+import           Control.Concurrent                   (forkIO, threadDelay)
 import           Control.Monad
 import           Control.Monad.IO.Class               (liftIO)
 import           Data.ByteString.Char8                as B (elem, pack, unpack)
@@ -15,14 +16,15 @@ import           Data.Monoid                          ((<>))
 import qualified Data.Text.Lazy                       as T
 import qualified Data.Text.Lazy.IO                    as TIO
 import           Data.Time.Clock.POSIX                (posixSecondsToUTCTime)
-import           Data.Time.Format                     (formatTime)
+import           Data.Time.Format                     (defaultTimeLocale,
+                                                       formatTime)
 import           Prelude                              as P
 import           System.Directory                     (doesDirectoryExist,
                                                        doesFileExist,
                                                        getDirectoryContents)
 import           System.Environment
 import           System.IO
-import           System.Locale                        (defaultTimeLocale)
+-- import           System.Locale                        (defaultTimeLocale)
 import qualified System.Posix.Files                   as F
 import           System.Process
 
@@ -101,7 +103,7 @@ authedRoutes = do
     liftIO $ handleFiles fs
     html $ T.pack $ show fs
 
-  getAuthed "/donnerator" $ do
+  get "/donnerator" $ do
     dism <- liftIO getDonnered
     blaze $ donnerPage dism
 
@@ -116,6 +118,23 @@ authedRoutes = do
   getAuthed "/donnerfile" $
     file "/home/miles/ruby/donnerator/donnerisms.txt"
 
+  getAuthed "/torrentadd" $ blaze addTorrentPage
+
+  postAuthed "/torrentadd" $ do
+                 (magnet :: String) <- param "magnet"
+                 liftIO $ do
+                   (_, Just hout, _, _) <- createProcess (shell "pgrep rtorrent" ) { std_out = CreatePipe }
+                   pid <- hGetContents hout
+                   if null pid
+                   then do
+                     createProcess $ shell "tmux new-session -s %u -d"
+                     threadDelay 1000000 -- ??
+                     createProcess $ shell "tmux send-keys rtorrent Enter"
+                     threadDelay 1000000 -- ??
+                     createProcess $ shell ("tmux send-keys a BSpace '" ++ magnet ++ "' Enter")
+                   else do
+                     createProcess $ shell ("tmux send-keys BSpace '" ++ magnet ++ "' Enter")
+                 redirect "/"
 
 loginRoutes :: ScottyM ()
 loginRoutes = do
@@ -130,9 +149,10 @@ loginRoutes = do
     (pass :: String) <- param "password"
     if usn == "guest" && pass == "password"
       then do addSession'
+              liftIO $ print "adding session"
               redirect "/"
       else do redirect "/denied"
-  S.get "/denied" $ S.text "acces denied"
+  S.get "/denied" $ S.text "ya gotta login man"
 
 
 
@@ -186,15 +206,18 @@ getDonnered =  do (_, Just hout, _, _) <- createProcess (proc "./donnerate.sh" [
                   hGetContents hout
 
 conf :: SessionConfig
-conf = defaultSessionConfig
+conf = defaultSessionConfig { syncInterval       = 3600 -- seconds
+                            , expirationInterval = 1800 -- seconds
+                            }
+
 {-
 data SessionConfig = SessionConfig { dbName             :: String
                                    , syncInterval       :: Int --seconds
                                    , expirationInterval :: NominalDiffTime
                                    }
-
 -}
-authCheck' = authCheck (redirect "/denied")
+
+authCheck' = authCheck  (redirect "/denied")
 addSession' = addSession conf
 initializeCookieDb' = initializeCookieDb conf
 
