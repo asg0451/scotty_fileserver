@@ -6,4 +6,5 @@ packages:
     commit: 56da3194db28abbd930dff5c7b0dec2c2f659434
 extra-deps:
 - scotty-cookie-0.1.0.3
+- posix-escape-0.1
 resolver: lts-3.1

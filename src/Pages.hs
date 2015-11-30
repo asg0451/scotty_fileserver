@@ -6,7 +6,6 @@ module Pages (template
              , homePage
              , donnerPage
              , donnerAddPage
-             , videojstest
              , addTorrentPage
              ) where
 
@@ -23,7 +22,7 @@ import qualified Data.Text.Lazy              as T
 
 
 addTorrentPage :: Html
-addTorrentPage = template "add a torrent" $ do
+addTorrentPage = template "add a torrent" $
                    H.form ! A.method "POST" ! action "/torrentadd" $ do
                                               input ! type_ "text" ! name "magnet" ! size "70"
                                               input ! type_ "submit" ! value "ADD"
@@ -36,7 +35,7 @@ homePage = renderText "home"
 
 renderDir :: String -> [FileEntry] -> [FileEntry] -> Html
 renderDir dir fs ds =
-  let dir' = if null dir then dir else (reverse $ dropWhile (== '/') $ reverse dir) ++ "/"
+  let dir' = if null dir then dir else reverse (dropWhile (== '/') $ reverse dir) ++ "/"
       fs' = sort fs
       ds' = sort ds
       frows = foldl (>>) mempty $ fmap
@@ -54,13 +53,12 @@ renderDir dir fs ds =
                   td $ toHtml $ feSize d) ds'
       ls = frows >> drows
   in html $ body $ H.div ! class_ "container-fluid" $ table ! class_ "table" $ do
-    thead $ do
+    thead $
       tr $ do
         th "files"
         th "last modified"
         th "size"
-    tbody ! class_ "fs-body" $ do
-      ls
+    tbody ! class_ "fs-body" $ ls
 
 
 uploadPage :: Html
@@ -98,8 +96,8 @@ templateWithHead title h body = do
 
 theFooter :: Html
 theFooter =
-  nav ! class_ "navbar navbar-default navbar-fixed-bottom" $ do
-    H.div ! class_ "container" $ do
+  nav ! class_ "navbar navbar-default navbar-fixed-bottom" $
+    H.div ! class_ "container" $
       H.div ! class_ "footer" $ do
         a ! class_ "navbar-link" ! href "/login"      $ "login"
         a ! class_ "navbar-link" ! href "/files"      $ "file serving"
@@ -136,13 +134,3 @@ donnerAddPage = template "Add to Donnerfile" $ do
   H.form ! A.method "POST" ! action "/donneradd" $ do
     input ! type_ "text" ! name "donner_line" ! size "70"
     input ! type_ "submit" ! value "SUBMIT"
-
-videojstest :: Html
-videojstest = templateWithHead "video.js Test"
-              (do H.link ! href "//vjs.zencdn.net/4.12/video-js.css" ! rel "stylesheet"
-                  script mempty ! src "//vjs.zencdn.net/4.12/video.js")
-              (do video ! A.id "example_video_1" ! class_ "video-js vjs-default-skin"
-                    ! controls mempty ! preload "auto" ! width "640" ! height "264"
---                    ! poster "http://video-js.zencoder.com/oceans-clip.png"
-                    $ do source ! src "/served_files/tv/Rick_and_Morty/Rick and Morty S01E06.mkv" ! type_ "video/webm"
-                         p ! class_ "vjs-no-js" $ "To view this video please enable JavaScript...")

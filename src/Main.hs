@@ -11,7 +11,7 @@ import           Control.Monad.IO.Class               (liftIO)
 import           Data.ByteString.Char8                as B (elem, pack, unpack)
 import           Data.ByteString.Lazy.Char8           as BL (writeFile)
 import           Data.Functor                         ((<$>))
-import           Data.List                            (isPrefixOf)
+import           Data.List                            (isPrefixOf, lookup)
 import           Data.Monoid                          ((<>))
 import qualified Data.Text.Lazy                       as T
 import qualified Data.Text.Lazy.IO                    as TIO
@@ -24,7 +24,9 @@ import           System.Directory                     (doesDirectoryExist,
                                                        getDirectoryContents)
 import           System.Environment
 import           System.IO
-import           Text.Blaze.Html5                     (p, toHtml)
+import           System.Posix.Escape                  (escape)
+import           Text.Blaze.Html5                     (a, p, toHtml, (!))
+import           Text.Blaze.Html5.Attributes          (href)
 -- import           System.Locale                        (defaultTimeLocale)
 import qualified System.Posix.Files                   as F
 import           System.Process
@@ -51,7 +53,7 @@ main = do envPort <- getEnv "PORT"
           h <- openFile "auth.txt" ReadMode
           c <- hGetContents h
           let l = P.lines c
-              !authp = (read envHttpAuth) :: Bool
+              !authp = read envHttpAuth :: Bool
           initializeCookieDb'
           scottyOpts
             (Options 1 (setPort (read envPort) defaultSettings)) $ do
@@ -70,8 +72,6 @@ main = do envPort <- getEnv "PORT"
 routes :: ScottyM ()
 routes = do S.get "/" $ blaze $ template "HOME" homePage
 
-            S.get "/videojstest" $ blaze videojstest
-
             loginRoutes
 
             authedRoutes
@@ -88,7 +88,7 @@ authedRoutes = do
   get (regex "^/files/(.+)$") $ do
     (f :: String) <- param "1"
     b <- liftIO $ doesFileExist (prefix <> f)
-    unless b $ next
+    unless b next
     liftIO $ print $ "opening file: " ++ f
     file' f
 
@@ -124,8 +124,12 @@ authedRoutes = do
   postAuthed "/torrentadd" $ do
                  (magnet :: String) <- param "magnet"
                  liftIO $ do
-                   createProcess $ shell ("transmission-remote -a '" ++ magnet ++ "'")
-                 redirect "/"
+                   let escaped = escape magnet
+                   print "****"
+                   putStrLn escaped -----
+                   print "****"
+                   createProcess $ shell ("transmission-remote -a '" ++ escaped ++ "'")
+                 redirect "/torrentstatus"
 
   getAuthed "/torrentstatus" $ do
                  res <- liftIO $ do
@@ -138,7 +142,7 @@ authedRoutes = do
 
 loginRoutes :: ScottyM ()
 loginRoutes = do
-  S.get "/login" $ S.html $ T.pack $ unlines $
+  S.get "/login" $ S.html $ T.pack $ unlines
     ["<form method=\"POST\" action=\"/login\">"
     , "<input type=\"text\" name=\"username\">"
     , "<input type=\"password\" name=\"password\">"
@@ -151,10 +155,11 @@ loginRoutes = do
       then do addSession'
               liftIO $ print "adding session"
               redirect "/"
-      else do redirect "/denied"
-  S.get "/denied" $ S.text "ya gotta login man"
+      else redirect "/denied"
 
-
+  S.get "/denied" $ blaze $ do
+                p "ya gotta login man"
+                a ! href "/login" $ "login"
 
 blaze = S.html . renderHtml
 
@@ -206,7 +211,7 @@ getDonnered =  do (_, Just hout, _, _) <- createProcess (proc "./donnerate.sh" [
                   hGetContents hout
 
 conf :: SessionConfig
-conf = defaultSessionConfig { syncInterval       = 3600 -- seconds
+conf = defaultSessionConfig { syncInterval       = 30 -- seconds
                             , expirationInterval = 1800 -- seconds
                             }
 

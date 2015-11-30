@@ -17,7 +17,7 @@ cabal-version:       >=1.10
 executable one
   hs-source-dirs:      src
   main-is:             Main.hs
-  -- other-modules:
+  other-modules:       Pages, Types
   -- other-extensions:
   build-depends:       base >=4.6 && <4.9
                      , wai
@@ -34,6 +34,7 @@ executable one
                      , unix
                      , time
                      , old-locale
+                     , posix-escape
 -- for donnerator
                      , process
 -- for static site
