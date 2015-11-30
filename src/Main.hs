@@ -24,6 +24,7 @@ import           System.Directory                     (doesDirectoryExist,
                                                        getDirectoryContents)
 import           System.Environment
 import           System.IO
+import           Text.Blaze.Html5                     (p, toHtml)
 -- import           System.Locale                        (defaultTimeLocale)
 import qualified System.Posix.Files                   as F
 import           System.Process
@@ -125,6 +126,15 @@ authedRoutes = do
                  liftIO $ do
                    createProcess $ shell ("transmission-remote -a '" ++ magnet ++ "'")
                  redirect "/"
+
+  getAuthed "/torrentstatus" $ do
+                 res <- liftIO $ do
+                   (_, Just hout, _, _) <- createProcess (shell "transmission-remote -l") { std_out = CreatePipe }
+                   hGetContents hout
+                 let rlines = lines res
+                              -- TODO parse this better in terms of tabs etc
+                     output = foldl (>>) mempty $ (p . toHtml) <$> rlines
+                 blaze $ template "torrents" output
 
 loginRoutes :: ScottyM ()
 loginRoutes = do
