@@ -123,17 +123,7 @@ authedRoutes = do
   postAuthed "/torrentadd" $ do
                  (magnet :: String) <- param "magnet"
                  liftIO $ do
-                   (_, Just hout, _, _) <- createProcess (shell "pgrep rtorrent" ) { std_out = CreatePipe }
-                   pid <- hGetContents hout
-                   if null pid
-                   then do
-                     createProcess $ shell "tmux new-session -s %u -d"
-                     threadDelay 1000000 -- ??
-                     createProcess $ shell "tmux send-keys rtorrent Enter"
-                     threadDelay 1000000 -- ??
-                     createProcess $ shell ("tmux send-keys a BSpace '" ++ magnet ++ "' Enter")
-                   else do
-                     createProcess $ shell ("tmux send-keys BSpace '" ++ magnet ++ "' Enter")
+                   createProcess $ shell ("transmission-remote -a '" ++ magnet ++ "'")
                  redirect "/"
 
 loginRoutes :: ScottyM ()
