@@ -121,14 +121,12 @@ authedRoutes = do
 
   getAuthed "/torrentadd" $ blaze addTorrentPage
 
-  postAuthed "/torrentadd" $ do
+  post "/torrentadd" $ do -- de-authed
                  (magnet :: String) <- param "magnet"
-                 liftIO $ do
-                   let escaped = escape magnet
-                   print "****"
-                   putStrLn escaped -----
-                   print "****"
-                   createProcess $ shell ("transmission-remote -a '" ++ escaped ++ "'")
+                 when (not $ null magnet) $ void $
+                               liftIO $ do
+                                 let escaped = escape magnet
+                                 spawn $ "transmission-remote -a '" ++ escaped ++ "'"
                  redirect "/torrentstatus"
 
   getAuthed "/torrentstatus" $ do
@@ -209,6 +207,9 @@ handleFiles fs = let fis = map snd fs
 getDonnered :: IO String
 getDonnered =  do (_, Just hout, _, _) <- createProcess (proc "./donnerate.sh" []) { std_out = CreatePipe, cwd = Just "/home/miles/ruby/donnerator" }
                   hGetContents hout
+
+
+spawn = createProcess . shell
 
 conf :: SessionConfig
 conf = defaultSessionConfig { syncInterval       = 30 -- seconds
