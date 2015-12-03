@@ -7,6 +7,7 @@ module Pages (template
              , donnerPage
              , donnerAddPage
              , addTorrentPage
+             , torrentStatusPage
              ) where
 
 import           Types
@@ -19,6 +20,24 @@ import qualified Text.Blaze.Html5.Attributes as A
 import           Data.List                   (isSuffixOf, sort)
 import           Data.Monoid
 import qualified Data.Text.Lazy              as T
+
+
+torrentStatusPage :: Html
+torrentStatusPage = do
+  H.span ! A.id "res" $ mempty
+  script ! type_ "text/javascript" $ toHtml $ unlines
+             [ ""
+             , "var getTorrentData = function () {"
+             , "  var x = new XMLHttpRequest();"
+             , "  x.addEventListener(\"load\", listener)"
+             , "  x.open(\"GET\", \"/torrentstatusraw\", true);"
+             , "  x.send();"
+             , "}"
+             , "var listener = function () {"
+             , "  document.getElementById(\"res\").innerHTML = this.response;"
+             , "}"
+             , "var t = setInterval(getTorrentData, 1000);"
+             , "" ]
 
 
 addTorrentPage :: Html

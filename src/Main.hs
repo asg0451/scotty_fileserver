@@ -123,20 +123,22 @@ authedRoutes = do
 
   post "/torrentadd" $ do -- de-authed
                  (magnet :: String) <- param "magnet"
-                 when (not $ null magnet) $ void $
-                               liftIO $ do
-                                 let escaped = escape magnet
-                                 spawn $ "transmission-remote -a '" ++ escaped ++ "'"
+                 unless (null magnet) $ void $ liftIO $
+                        spawn $ "transmission-remote -a '" ++ escape magnet ++ "'"
                  redirect "/torrentstatus"
 
   getAuthed "/torrentstatus" $ do
-                 res <- liftIO $ do
-                   (_, Just hout, _, _) <- createProcess (shell "transmission-remote -l") { std_out = CreatePipe }
-                   hGetContents hout
-                 let rlines = lines res
+                 res <- liftIO $ shellWithOut "transmission-remote -l"
                               -- TODO parse this better in terms of tabs etc
-                     output = foldl (>>) mempty $ (p . toHtml) <$> rlines
-                 blaze $ template "torrents" output
+                 let output = foldl (>>) mempty $ (p . toHtml) <$> lines res
+                 blaze $ template "torrents" torrentStatusPage
+
+
+  getAuthed "/torrentstatusraw" $ do
+                 res <- liftIO $ shellWithOut "transmission-remote -l"
+                              -- TODO parse this better in terms of tabs etc
+                 let output = foldl (>>) mempty $ (p . toHtml) <$> lines res
+                 blaze $ output
 
 loginRoutes :: ScottyM ()
 loginRoutes = do
@@ -210,6 +212,9 @@ getDonnered =  do (_, Just hout, _, _) <- createProcess (proc "./donnerate.sh" [
 
 
 spawn = createProcess . shell
+
+shellWithOut :: String -> IO String
+shellWithOut s = createProcess (shell s) { std_out = CreatePipe } >>= \(_, Just hout, _, _) -> hGetContents hout
 
 conf :: SessionConfig
 conf = defaultSessionConfig { syncInterval       = 30 -- seconds
