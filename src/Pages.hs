@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 module Pages (template
              , renderText
              , renderDir
@@ -21,7 +22,7 @@ import           Data.List                   (isSuffixOf, sort)
 import           Data.Monoid
 import qualified Data.Text.Lazy              as T
 
-
+-- not used
 torrentStatusPage :: Html
 torrentStatusPage = do
   H.span ! A.id "res" $ mempty

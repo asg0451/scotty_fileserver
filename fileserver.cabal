@@ -35,6 +35,13 @@ executable one
                      , time
                      , old-locale
                      , posix-escape
+                     , blaze-markup
+                     -- javascript qq
+                     , shakespeare
+                     -- not needed
+                     , aeson
+                     , json-autotype
+
 -- for donnerator
                      , process
 -- for static site

@@ -2,12 +2,14 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
+import           JSONTypes
 import           Pages
 import           Types
 
 import           Control.Concurrent                   (forkIO, threadDelay)
 import           Control.Monad
 import           Control.Monad.IO.Class               (liftIO)
+import           Data.Aeson
 import           Data.ByteString.Char8                as B (elem, pack, unpack)
 import           Data.ByteString.Lazy.Char8           as BL (writeFile)
 import           Data.Functor                         ((<$>))
@@ -25,8 +27,12 @@ import           System.Directory                     (doesDirectoryExist,
 import           System.Environment
 import           System.IO
 import           System.Posix.Escape                  (escape)
-import           Text.Blaze.Html5                     (a, p, toHtml, (!))
-import           Text.Blaze.Html5.Attributes          (href)
+import           Text.Blaze                           (preEscapedString)
+import           Text.Blaze.Html5                     as H (a, div, p, script,
+                                                            table, tbody,
+                                                            toHtml, (!))
+import           Text.Blaze.Html5.Attributes          as A (class_, href, id,
+                                                            type_)
 -- import           System.Locale                        (defaultTimeLocale)
 import qualified System.Posix.Files                   as F
 import           System.Process
@@ -128,17 +134,20 @@ authedRoutes = do
                  redirect "/torrentstatus"
 
   getAuthed "/torrentstatus" $ do
-                 res <- liftIO $ shellWithOut "transmission-remote -l"
-                              -- TODO parse this better in terms of tabs etc
-                 let output = foldl (>>) mempty $ (p . toHtml) <$> lines res
-                 blaze $ template "torrents" torrentStatusPage
-
+                 js <- liftIO $ readFile "static/js/torrentstatus.js"
+                 blaze $ template "torrents" $ do
+                                 script ! type_ "text/javascript" $ preEscapedString $ js
+                                 H.div ! class_ "container-fluid" $
+                                  table ! A.id "res" ! class_ "table" $ tbody ! class_ "fs-body" $ mempty
 
   getAuthed "/torrentstatusraw" $ do
-                 res <- liftIO $ shellWithOut "transmission-remote -l"
-                              -- TODO parse this better in terms of tabs etc
-                 let output = foldl (>>) mempty $ (p . toHtml) <$> lines res
-                 blaze $ output
+                 res <- liftIO $ shellWithOut "transmission-remote --debug -l 2>&1 | sed '1,/200 OK/d'| sed '1,/got response/d'| grep -A 1 -- '--------'| head -n 2| tail -n 1"
+                 S.json res
+
+  postAuthed "/removetorrent" $ do
+                 (id :: String) <- param "torrentid"
+                 res <- liftIO $ shellWithOut $ "transmission-remote -t " ++ escape id ++ "  -r"
+                 return ()
 
 loginRoutes :: ScottyM ()
 loginRoutes = do
@@ -188,8 +197,8 @@ dirInfo p = do let path = if p /= "" then prefix ++ p ++ "/" else prefix
         showSize :: Int -> String
         showSize n
           | n < 1000    = show n                 ++ " b"
-          | n < 1000000 = show (n `div` 1000)    ++ " k"
-          | otherwise   = show (n `div` 1000000) ++ " m"
+          | n < 1000000 = show (n `P.div` 1000)    ++ " k"
+          | otherwise   = show (n `P.div` 1000000) ++ " m"
 
 serveDir p = do (fs, ds) <- liftIO $ dirInfo p
                 blaze $ template p $ renderDir p fs ds
