@@ -13,21 +13,20 @@ var listener = function () {
 var intrvl = setInterval(getTorrentData, 1000);
 
 var refresh = function (dataEscaped) {
-    var dataWat = JSON.parse(dataEscaped);
-    var data = JSON.parse(dataWat);
+    var data = JSON.parse(JSON.parse(dataEscaped));
     console.log(data);
     // initialize
     var table = document.getElementById("res");
     table.innerHTML = "";
     var head = table.insertRow(0);
-    headRow.forEach(function (c) {
+    headRow.forEach( c => {
         var r = head.insertCell();
         r.innerHTML = c;
     });
     //////////////
     var torrents = data.arguments.torrents;
     console.log(torrents);
-    torrents.forEach(function(t) {
+    torrents.forEach( t => {
         console.log(t);
         var r = table.insertRow();
         var c = r.insertCell();
