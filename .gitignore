@@ -5,4 +5,6 @@ auth.txt
 served_files/*
 nohup.out
 sessions.sqlite3
+sessions.sqlite3-shm
+sessions.sqlite3-wal
 .stack-work/*

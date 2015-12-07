@@ -1,3 +1,6 @@
+///
+'use strict';
+
 var getTorrentData = function () {
     var x = new XMLHttpRequest();
     x.addEventListener("load", listener);
@@ -6,8 +9,8 @@ var getTorrentData = function () {
 };
 var listener = function () {
     refresh(this.response);
-}
-var t = setInterval(getTorrentData, 1000);
+};
+var intrvl = setInterval(getTorrentData, 1000);
 
 var refresh = function (dataEscaped) {
     var dataWat = JSON.parse(dataEscaped);
@@ -17,57 +20,54 @@ var refresh = function (dataEscaped) {
     var table = document.getElementById("res");
     table.innerHTML = "";
     var head = table.insertRow(0);
-    for(var i = 0; i < headRow.length; i++) {
+    headRow.forEach(function (c) {
         var r = head.insertCell();
-        r.innerHTML = headRow[i];
-    }
+        r.innerHTML = c;
+    });
     //////////////
     var torrents = data.arguments.torrents;
     console.log(torrents);
-    for(var i = 0; i < torrents.length; i++) {
-        console.log(torrents[i]);
+    torrents.forEach(function(t) {
+        console.log(t);
         var r = table.insertRow();
         var c = r.insertCell();
-        c.innerHTML = torrents[i].id;
+        c.innerHTML = t.id;
 
         c = r.insertCell();
-        c.innerHTML = Math.round(((torrents[i].sizeWhenDone - torrents[i].leftUntilDone)/torrents[i].sizeWhenDone)*100) + "%";
+        c.innerHTML = Math.round(((t.sizeWhenDone - t.leftUntilDone)/t.sizeWhenDone)*100) + "%";
 
         c = r.insertCell();
-        c.innerHTML = sizeify(torrents[i].sizeWhenDone - torrents[i].leftUntilDone);
+        c.innerHTML = sizeify(t.sizeWhenDone - t.leftUntilDone);
 
         c = r.insertCell();
-        c.innerHTML = etaLookup(torrents[i].eta);
+        c.innerHTML = etaLookup(t.eta);
 
         c = r.insertCell();
-        c.innerHTML = torrents[i].rateUpload / 1000 + " kB/s";
+        c.innerHTML = t.rateUpload / 1000 + " kB/s";
 
         c = r.insertCell();
-        c.innerHTML = torrents[i].rateDownload / 1000 + " kB/s";
+        c.innerHTML = t.rateDownload / 1000 + " kB/s";
 
         c = r.insertCell();
-        c.innerHTML = torrents[i].uploadRatio < 0 ? "N/A" : torrents[i].uploadRatio;
+        c.innerHTML = t.uploadRatio < 0 ? "N/A" : t.uploadRatio;
 
         c = r.insertCell();
-        c.innerHTML = statusLookup(torrents[i].status);
+        c.innerHTML = statusLookup(t.status);
 
         c = r.insertCell();
-        c.innerHTML = torrents[i].name;
+        c.innerHTML = t.name;
 
-        //// button
-        // var bdiv = document.createElement("div");
-        // bdiv.className = "container";
         var button = document.createElement("input");
         button.type = "button";
         button.value = "Remove";
         button.className = "btn btn-danger";
-        curId = torrents[i].id;
+        curId = t.id;
         console.log(curId);
         button.onclick = removeTorrent;
 
         c = r.insertCell();
         c.appendChild(button);
-    }
+    });
 };
 
 /////////// vars
@@ -88,9 +88,9 @@ var headRow = [  "ID",
 
 var removeTorrent = function() {
     var x = new XMLHttpRequest();
-//    x.addEventListener("load", listener);
     x.open("POST", "/removetorrent", true);
     x.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    x.addEventListener("load", function() { curId = -1; });
     x.send("torrentid=" + encodeURIComponent(curId));
 };
 
