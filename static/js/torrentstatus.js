@@ -120,13 +120,11 @@ var etaLookup = function (e) {
 };
 
 var fmt = function (s) {
-    var min = Math.floor(s/60);
-    var sec = s - min * 60;
     var hrs = Math.floor(s/3600);
-    if (hrs < 1)
-        return str_pad_left(min,'0',2) + ":" + str_pad_left(sec,'0',2);
-    else
-        return str_pad_left(hrs, '0', 2) + ":" + str_pad_left(min,'0',2) + ":" + str_pad_left(sec,'0',2);
+    var min = Math.floor((s - hrs*3600)/60);
+    var sec = s - min * 6 - hrs * 36000;
+    return str_pad_left(hrs, '0', 2) + ":" + str_pad_left(min,'0',2) + ":" + str_pad_left(sec,'0',2);
+
 };
 
 function str_pad_left(string,pad,length) {
