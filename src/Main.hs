@@ -2,14 +2,12 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
-import           JSONTypes
 import           Pages
 import           Types
 
 import           Control.Concurrent                   (forkIO, threadDelay)
 import           Control.Monad
 import           Control.Monad.IO.Class               (liftIO)
-import           Data.Aeson
 import           Data.ByteString.Char8                as B (elem, pack, unpack)
 import           Data.ByteString.Lazy.Char8           as BL (writeFile)
 import           Data.Functor                         ((<$>))
@@ -216,14 +214,24 @@ handleFiles fs = let fis = map snd fs
                      BL.writeFile (B.unpack (B.pack prefix <> fileName f)) $ fileContent f
 
 getDonnered :: IO String
-getDonnered =  do (_, Just hout, _, _) <- createProcess (proc "./donnerate.sh" []) { std_out = CreatePipe, cwd = Just "/home/miles/ruby/donnerator" }
-                  hGetContents hout
+getDonnered =  do (_, Just hout, _, pHandle) <- createProcess (proc "./donnerate.sh" []) { std_out = CreatePipe, cwd = Just "/home/miles/ruby/donnerator" }
+                  waitForProcess pHandle
+                  c <- hGetContents' hout
+                  hClose hout
+                  return c
 
 
 spawn = createProcess . shell
 
 shellWithOut :: String -> IO String
-shellWithOut s = createProcess (shell s) { std_out = CreatePipe } >>= \(_, Just hout, _, _) -> hGetContents hout
+shellWithOut s = do
+  (_, Just hout, __, pHandle) <- createProcess (shell s) { std_out = CreatePipe }
+  waitForProcess pHandle
+  c <- hGetContents' hout
+  hClose hout
+  return c
+
+hGetContents' h = hGetContents h >>= \s -> length s `seq` return s
 
 conf :: SessionConfig
 conf = defaultSessionConfig { syncInterval       = 30 -- seconds
