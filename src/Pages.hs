@@ -93,7 +93,7 @@ template title body = do
     H.head $ do meta ! charset "utf-8"
                 meta ! name "viewport" ! content
                   "width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0"
-                link ! rel "shortcut icon" ! type_ "image/x-icon" ! href "/favicon.ico"
+                link ! rel "shortcut icon" ! type_ "image/x-icon" ! href "/static/favicon.ico"
                 H.title $ toHtml title
                 defaultIncludes
     H.body $ do body
@@ -106,7 +106,7 @@ templateWithHead title h body = do
     H.head $ do meta ! charset "utf-8"
                 meta ! name "viewport" ! content
                   "width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0"
-                link ! rel "shortcut icon" ! type_ "image/x-icon" ! href "/favicon.ico"
+                link ! rel "shortcut icon" ! type_ "image/x-icon" ! href "/static/favicon.ico"
                 H.title $ toHtml title
                 defaultIncludes
                 h

@@ -65,7 +65,7 @@ main = do envPort <- getEnv "PORT"
                 addHeaders [(B.pack "X-Clacks-Overhead", B.pack "GNU Terry Pratchett")]
               middleware logStdoutDev
               middleware $ staticPolicy $
-                hasPrefix "static/" <|> hasPrefix "served_files/"
+                hasPrefix "static/" -- <|> hasPrefix "served_files/"
               when (P.length l == 2 && authp) $ do
                 let usn = head l
                     passwd = l !! 1
@@ -80,27 +80,30 @@ routes = do S.get "/" $ blaze $ template "HOME" homePage
 
             authedRoutes
 
-            S.get "/staticpage1" $ S.text "some static page"
+            fileRoutes
 
-            S.get "/favicon.ico" $ file "static/favicon.ico"
             S.notFound $ html "not here"
 
-authedRoutes :: ScottyM ()
-authedRoutes = do
+
+fileRoutes :: ScottyM ()
+fileRoutes = do
   get "/files/" $ serveDir ""
 
   get (regex "^/files/(.+)$") $ do
-    (f :: String) <- param "1"
-    b <- liftIO $ doesFileExist (prefix <> f)
-    unless b next
-    liftIO $ print $ "opening file: " ++ f
-    file' f
+               (f :: String) <- param "1"
+               b <- liftIO $ doesFileExist (prefix <> f)
+               unless b next
+               liftIO $ print $ "opening file: " ++ f
+               file' f
 
   get (regex "^/files/(.+)$") $ do
-    dir <- param "1"
-    liftIO $ print $ "opening dir: " ++ dir
-    serveDir dir
+               dir <- param "1"
+               liftIO $ print $ "opening dir: " ++ dir
+               serveDir dir
 
+
+authedRoutes :: ScottyM ()
+authedRoutes = do
   getAuthed "/upload" $ blaze uploadPage
 
   postAuthed "/uploaded" $ do
@@ -194,7 +197,7 @@ dirInfo p = do let path = if p /= "" then prefix ++ p ++ "/" else prefix
   where strTime = formatTime defaultTimeLocale "%F" . posixSecondsToUTCTime
         showSize :: Int -> String
         showSize n
-          | n < 1000    = show n                 ++ " b"
+          | n < 1000    = show n                   ++ " b"
           | n < 1000000 = show (n `P.div` 1000)    ++ " k"
           | otherwise   = show (n `P.div` 1000000) ++ " m"
 
@@ -221,6 +224,7 @@ getDonnered =  do (_, Just hout, _, pHandle) <- createProcess (proc "./donnerate
                   return c
 
 
+--------------------------------------------------
 spawn = createProcess . shell
 
 shellWithOut :: String -> IO String

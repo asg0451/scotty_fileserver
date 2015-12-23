@@ -37,8 +37,10 @@ var refresh = function (dataEscaped) {
         button.type = "button";
         button.value = "Remove";
         button.className = "btn btn-danger";
-        curId = t.id;
-        button.onclick = removeTorrent;
+//         curId = t.id;
+        button.addEventListener('click', function(){
+            removeTorrent(t.id);
+        });
 
         var c = r.insertCell();
         c.appendChild(button);
@@ -47,7 +49,7 @@ var refresh = function (dataEscaped) {
 
 /////////// vars
 
-var curId = -1;
+// var curId = -1;
 
 var headRow = [  "ID",
                  "Done",
@@ -74,12 +76,12 @@ var fields = t => {
 
 ////////// xhttp funcs
 
-var removeTorrent = function() {
+var removeTorrent = function(id) {
     var x = new XMLHttpRequest();
     x.open("POST", "/removetorrent", true);
     x.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    x.addEventListener("load", function() { curId = -1; });
-    x.send("torrentid=" + encodeURIComponent(curId));
+//    x.addEventListener("load", function() { curId = -1; });
+    x.send("torrentid=" + encodeURIComponent(id));
 };
 
 /////////// utility functions
