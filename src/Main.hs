@@ -23,6 +23,7 @@ import           System.Directory                     (doesDirectoryExist,
                                                        doesFileExist,
                                                        getDirectoryContents)
 import           System.Environment
+import           System.FilePath
 import           System.IO
 import           System.Posix.Escape                  (escape)
 import           Text.Blaze                           (preEscapedString)
@@ -108,7 +109,9 @@ authedRoutes = do
 
   postAuthed "/uploaded" $ do
     fs <- files
-    liftIO $ handleFiles fs
+    dir <- param "folder"
+--    liftIO $ print ps
+    liftIO $ handleFiles dir fs
     html $ T.pack $ show fs
 
   get "/donnerator" $ do
@@ -209,12 +212,19 @@ prefix = "served_files/"
 
 -- type File = (Text, FileInfo ByteString) -- (field in form where came from, info)
 -- FileInfo { fileName :: ByteString, fileContentType :: ByteString, fileContent :: c }
-handleFiles :: [S.File] -> IO ()
-handleFiles fs = let fis = map snd fs
-                     fis' = filter (\f -> not ('/' `B.elem` fileName f))  fis
-                 in void $ forM fis' $
-                    \f ->
-                     BL.writeFile (B.unpack (B.pack prefix <> fileName f)) $ fileContent f
+handleFiles :: FilePath -> [S.File] -> IO ()
+handleFiles dir fs = let fis = map snd fs
+                         fis' = filter (\f -> not ('/' `B.elem` fileName f))  fis
+                     in void $ forM fis' $ \f -> do
+                       let fname = B.unpack $ fileName f
+                           path = case dir of
+                                    "default" -> prefix </> fname
+                                    "movies"  -> prefix </> "movies" </> fname
+                                    "tv"      -> prefix </> "tv" </> fname
+                                    "music"   -> prefix </> "music" </> fname
+                                    otherwise -> prefix </> fname
+                       unlessM (orM [doesFileExist path, doesDirectoryExist path]) $
+                               BL.writeFile path $ fileContent f
 
 getDonnered :: IO String
 getDonnered =  do (_, Just hout, _, pHandle) <- createProcess (proc "./donnerate.sh" []) { std_out = CreatePipe, cwd = Just "/home/miles/ruby/donnerator" }
@@ -225,6 +235,15 @@ getDonnered =  do (_, Just hout, _, pHandle) <- createProcess (proc "./donnerate
 
 
 --------------------------------------------------
+whenM :: Monad m => m Bool -> m () -> m ()
+whenM p a = p >>= \b -> if b then a else return ()
+
+unlessM :: Monad m => m Bool -> m () -> m ()
+unlessM p a = p >>= \b -> if (not b) then a else return ()
+
+orM :: Monad m => [m Bool] -> m Bool
+orM = (fmap or) . sequence
+
 spawn = createProcess . shell
 
 shellWithOut :: String -> IO String

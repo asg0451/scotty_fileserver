@@ -84,7 +84,12 @@ renderDir dir fs ds =
 uploadPage :: Html
 uploadPage = template "upload form" $ do
   link ! rel "stylesheet" ! href "https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.0.1/dropzone.css"
-  H.form mempty ! action "/uploaded" ! class_ "dropzone" ! A.id "customdropzone"
+  H.form ! action "/uploaded" ! class_ "dropzone" ! A.id "customdropzone" $ do
+    H.select ! A.id "folder" ! A.name "folder" $ do
+      H.option ! A.selected "" ! A.value "default" $ "default"
+      H.option ! A.value "movies" $ "movies"
+      H.option ! A.value "tv" $ "tv"
+      H.option ! A.value "music" $ "music"
 
 template :: String -> Html -> Html
 template title body = do
