@@ -140,7 +140,7 @@ authedRoutes = do
   getAuthed "/torrentstatus" $ do
                  js <- liftIO $ readFile "static/js/torrentstatus.js"
                  blaze $ template "torrents" $ do
-                                 script ! type_ "text/javascript" $ preEscapedString $ js
+                                 script ! type_ "text/javascript" $ preEscapedString js
                                  H.div ! class_ "container-fluid" $
                                   table ! A.id "res" ! class_ "table" $ tbody ! class_ "fs-body" $ mempty
 
@@ -236,13 +236,13 @@ getDonnered =  do (_, Just hout, _, pHandle) <- createProcess (proc "./donnerate
 
 --------------------------------------------------
 whenM :: Monad m => m Bool -> m () -> m ()
-whenM p a = p >>= \b -> if b then a else return ()
+whenM p a = p >>= \b -> when b a
 
 unlessM :: Monad m => m Bool -> m () -> m ()
-unlessM p a = p >>= \b -> if (not b) then a else return ()
+unlessM p a = p >>= \b -> unless b a
 
 orM :: Monad m => [m Bool] -> m Bool
-orM = (fmap or) . sequence
+orM = fmap or . sequence
 
 spawn = createProcess . shell
 
