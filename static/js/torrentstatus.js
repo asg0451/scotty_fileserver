@@ -1,15 +1,14 @@
-///
+/* jshint browser: true, esversion: 6*/
+/* globals _: true */
 'use strict';
 
 var getTorrentData = function () {
     var x = new XMLHttpRequest();
-    x.addEventListener("load", listener);
+    x.addEventListener("load", function () {
+        refresh(this.response);
+    });
     x.open("GET", "/torrentstatusraw", true);
     x.send();
-};
-
-var listener = function () {
-    refresh(this.response);
 };
 
 var intrvl = setInterval(getTorrentData, 1000);
@@ -56,11 +55,15 @@ var refresh = function (dataEscaped) {
         sum.up += t.rateUpload / 1000;
         sum.down += t.rateDownload / 1000;
         var numTorrents = data.arguments.torrents.length;
-        sum.ratioAvg -= sum.ratioAvg / numTorrents;
-        sum.ratioAvg +=
-            (t.uploadRatio >=0 ? t.uploadRatio : sum.ratioAvg) / numTorrents;
+        // sum.ratioAvg -= sum.ratioAvg / numTorrents;
+        // sum.ratioAvg +=
+        //     (t.uploadRatio >=0 ? t.uploadRatio : sum.ratioAvg) / numTorrents;
 
     });
+
+    // calculate weighted average
+    sum.ratioAvg = _.sumBy(torrents, t => t.uploadRatio * t.sizeWhenDone ) /
+        (torrents.length * _(torrents).map('sizeWhenDone').sum());
 
     // add sum row
     var r = table.insertRow();
@@ -68,15 +71,13 @@ var refresh = function (dataEscaped) {
     ["SUM", "", sizeify(sum.have), "", sum.up + " kB/s",
      sum.down + " kB/s", (sum.ratioAvg).toFixed(4), "<-- AVG", ""]
         .forEach(e => {
-            var c =r.insertCell()
+            var c =r.insertCell();
             c.innerHTML = e;
         });
 
 };
 
 /////////// vars
-
-// var curId = -1;
 
 var headRow = [  "ID",
                  "Done",
@@ -90,8 +91,7 @@ var headRow = [  "ID",
 
 var fields = t => {
     return  [ t.id,
-              Math.round(((t.sizeWhenDone - t.leftUntilDone)/t.sizeWhenDone)
-                         *100) + "%",
+              Math.round(((t.sizeWhenDone - t.leftUntilDone)/t.sizeWhenDone) * 100) + "%",
               sizeify(t.sizeWhenDone - t.leftUntilDone),
               etaLookup(t.eta),
               t.rateUpload / 1000 + " kB/s",
@@ -107,7 +107,6 @@ var removeTorrent = function(id) {
     var x = new XMLHttpRequest();
     x.open("POST", "/removetorrent", true);
     x.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-//    x.addEventListener("load", function() { curId = -1; });
     x.send("torrentid=" + encodeURIComponent(id));
 };
 
@@ -162,6 +161,4 @@ var sizeify = function (n) {
     else return n + " B";
 };
 
-document.onload = function() {
-    getTorrentData();
-};
+getTorrentData();

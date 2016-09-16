@@ -137,12 +137,7 @@ authedRoutes = do
                         spawn $ "transmission-remote -a '" ++ escape magnet ++ "'"
                  redirect "/torrentstatus"
 
-  getAuthed "/torrentstatus" $ do
-                 js <- liftIO $ readFile "static/js/torrentstatus.js"
-                 blaze $ template "torrents" $ do
-                                 script ! type_ "text/javascript" $ preEscapedString js
-                                 H.div ! class_ "container-fluid" $
-                                  table ! A.id "res" ! class_ "table" $ tbody ! class_ "fs-body" $ mempty
+  getAuthed "/torrentstatus" $ blaze torrentStatusPage
 
   getAuthed "/torrentstatusraw" $ do
                  res <- liftIO $ shellWithOut "transmission-remote --debug -l 2>&1 | sed '1,/200 OK/d'| sed '1,/got response/d'| grep -A 1 -- '--------'| head -n 2| tail -n 1"

@@ -21,24 +21,12 @@ import           Data.List                   (isSuffixOf, sort)
 import           Data.Monoid
 import qualified Data.Text.Lazy              as T
 
--- not used
 torrentStatusPage :: Html
-torrentStatusPage = do
-  H.span ! A.id "res" $ mempty
-  script ! type_ "text/javascript" $ toHtml $ unlines
-             [ ""
-             , "var getTorrentData = function () {"
-             , "  var x = new XMLHttpRequest();"
-             , "  x.addEventListener(\"load\", listener)"
-             , "  x.open(\"GET\", \"/torrentstatusraw\", true);"
-             , "  x.send();"
-             , "}"
-             , "var listener = function () {"
-             , "  document.getElementById(\"res\").innerHTML = this.response;"
-             , "}"
-             , "var t = setInterval(getTorrentData, 1000);"
-             , "" ]
-
+torrentStatusPage = template "torrents" $ do
+  script mempty ! src "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.15.0/lodash.min.js"
+  script mempty ! src "/static/js/torrentstatus.js"
+  H.div ! class_ "container-fluid" $
+    table ! A.id "res" ! class_ "table" $ tbody ! class_ "fs-body" $ mempty
 
 addTorrentPage :: Html
 addTorrentPage = template "add a torrent" $
