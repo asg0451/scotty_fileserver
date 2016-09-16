@@ -7,4 +7,4 @@ packages:
 extra-deps:
 - scotty-cookie-0.1.0.3
 - posix-escape-0.1
-resolver: lts-3.1
+resolver: lts-5.5

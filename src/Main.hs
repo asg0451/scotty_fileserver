@@ -149,9 +149,18 @@ authedRoutes = do
                  S.json res
 
   postAuthed "/removetorrent" $ do
-                 (id :: String) <- param "torrentid"
-                 res <- liftIO $ shellWithOut $ "transmission-remote -t " ++ escape id ++ "  -r"
-                 return ()
+    (id :: String) <- param "torrentid"
+    _ <- liftIO $ shellWithOut $ "transmission-remote -t " ++ escape id ++ "  -r"
+    return ()
+  postAuthed "/torrentmove" $ do
+    (num :: Int) <- param "num"
+    (dir :: String) <- param "dir"
+    unless (num >= 0 && not (null dir)) $ do
+      liftIO $spawn $ "transmission-remote -t " ++ (escape $ show num) ++ " -- move " ++
+        escape dir ++ " && transmission-remote -t " ++ (escape $ show num) ++ " -v"
+      redirect "/torrentstatus"
+
+
 
 loginRoutes :: ScottyM ()
 loginRoutes = do
@@ -216,12 +225,13 @@ handleFiles :: FilePath -> [S.File] -> IO ()
 handleFiles dir fs = let fis = map snd fs
                          fis' = filter (\f -> not ('/' `B.elem` fileName f))  fis
                      in void $ forM fis' $ \f -> do
-                       let fname = B.unpack $ fileName f
+                       let fname = subSemis $ B.unpack $ fileName f
                            path = case dir of
-                                    "default" -> prefix </> fname
-                                    "movies"  -> prefix </> "movies" </> fname
-                                    "tv"      -> prefix </> "tv" </> fname
-                                    "music"   -> prefix </> "music" </> fname
+                                    "default"      -> prefix </> fname
+                                    "movies"       -> prefix </> "movies" </> fname
+                                    "tv"           -> prefix </> "tv" </> fname
+                                    "music"        -> prefix </> "music" </> fname
+                                    "torrentwatch" -> prefix </> "torrentwatch" </> fname
                                     otherwise -> prefix </> fname
                        unlessM (orM [doesFileExist path, doesDirectoryExist path]) $
                                BL.writeFile path $ fileContent f
@@ -243,6 +253,10 @@ unlessM p a = p >>= \b -> unless b a
 
 orM :: Monad m => [m Bool] -> m Bool
 orM = fmap or . sequence
+
+subSemis :: String -> String
+subSemis = foldr (\c a -> if c == ';' then ('\\' : ';' : a) else (c:a)) []
+
 
 spawn = createProcess . shell
 

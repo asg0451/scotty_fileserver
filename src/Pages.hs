@@ -89,6 +89,7 @@ uploadPage = template "upload form" $ do
       H.option ! A.value "movies" $ "movies"
       H.option ! A.value "tv" $ "tv"
       H.option ! A.value "music" $ "music"
+      H.option ! A.value "torrentwatch" $ "torrentwatch"
 
 template :: String -> Html -> Html
 template title body = do

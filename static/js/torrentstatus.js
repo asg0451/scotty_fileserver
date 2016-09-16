@@ -7,20 +7,28 @@ var getTorrentData = function () {
     x.open("GET", "/torrentstatusraw", true);
     x.send();
 };
+
 var listener = function () {
     refresh(this.response);
 };
+
 var intrvl = setInterval(getTorrentData, 1000);
 
 var refresh = function (dataEscaped) {
+    var sum = {
+        have: 0,
+        up: 0,
+        down: 0,
+        ratioAvg: 0
+    };
     var data = JSON.parse(JSON.parse(dataEscaped));
     // initialize
     var table = document.getElementById("res");
     table.innerHTML = "";
     var head = table.insertRow(0);
     headRow.forEach( c => {
-        var r = head.insertCell();
-        r.innerHTML = c;
+        var cell = head.insertCell();
+        cell.innerHTML = c;
     });
     //////////////
     var torrents = data.arguments.torrents;
@@ -37,14 +45,33 @@ var refresh = function (dataEscaped) {
         button.type = "button";
         button.value = "Remove";
         button.className = "btn btn-danger";
-//         curId = t.id;
         button.addEventListener('click', function(){
             removeTorrent(t.id);
         });
 
         var c = r.insertCell();
         c.appendChild(button);
+        /// log values
+        sum.have += t.sizeWhenDone - t.leftUntilDone;
+        sum.up += t.rateUpload / 1000;
+        sum.down += t.rateDownload / 1000;
+        var numTorrents = data.arguments.torrents.length;
+        sum.ratioAvg -= sum.ratioAvg / numTorrents;
+        sum.ratioAvg +=
+            (t.uploadRatio >=0 ? t.uploadRatio : sum.ratioAvg) / numTorrents;
+
     });
+
+    // add sum row
+    var r = table.insertRow();
+
+    ["SUM", "", sizeify(sum.have), "", sum.up + " kB/s",
+     sum.down + " kB/s", (sum.ratioAvg).toFixed(4), "<-- AVG", ""]
+        .forEach(e => {
+            var c =r.insertCell()
+            c.innerHTML = e;
+        });
+
 };
 
 /////////// vars
@@ -96,6 +123,8 @@ var statusLookup = function (s) {
         return "Seeding";
     case 2:
         return "Verifying";
+    case 1:
+        return "Will Verify";
     default:
         return "idk";
     }
@@ -131,4 +160,8 @@ var sizeify = function (n) {
     else if (n > 1000)
         return Math.round(n/1000) + " KB";
     else return n + " B";
+};
+
+document.onload = function() {
+    getTorrentData();
 };
