@@ -1,50 +1,40 @@
 html {
-    position: relative;
-    min-height: 100%;
-}
+  position: relative;
+  min-height: 100%; }
+  html p {
+    color: blue; }
 
 body {
-    padding-bottom: 50px;
-}
+  padding-bottom: 50px; }
 
 .footer {
-    text-align: center;
-}
+  text-align: center; }
 
 .footer a {
-    padding-left: 1%;
-    padding-right: 1%;
-    padding-top: 1%;
-}
+  padding-left: 1%;
+  padding-right: 1%;
+  padding-top: 1%; }
 
-@media screen and (max-width: 767px) { /* phones */
-    .footer a {
-        font-size: 2.2vw;
-    }
+@media screen and (max-width: 767px) {
+  /* phones */
+  .footer a {
+    font-size: 2.2vw; }
 
-    .fs-body {
-        font-size: 2.5vw;
-    }
-}
-
+  .fs-body {
+    font-size: 2.5vw; } }
 @media screen and (min-width: 992px) {
-    .footer a {
-        font-size: 1.2vw;
-    }
+  .footer a {
+    font-size: 1.2vw; }
 
-    .fs-body {
-        font-size: 1.5vw;
-    }
-}
-
+  .fs-body {
+    font-size: 1.5vw; } }
 td {
-    padding: 0px 10px 0px 10px;
-}
+  padding: 0px 10px 0px 10px; }
 
 table {
-    width: 75%
-}
+  width: 75%; }
 
 #customdropzone {
-    width: 50%
-}
+  width: 50%; }
+
+/*# sourceMappingURL=default.css.map */

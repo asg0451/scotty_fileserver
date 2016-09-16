@@ -37,8 +37,8 @@ executable one
                      , posix-escape
                      , blaze-markup
                      , filepath
-
--- for donnerator
+                     , interpolate
+                     , split
                      , process
 -- for static site
                      , scotty-login-session

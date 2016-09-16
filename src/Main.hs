@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QuasiQuotes         #-}
 module Main where
 import           Pages
 import           Types
@@ -11,7 +12,7 @@ import           Control.Monad.IO.Class               (liftIO)
 import           Data.ByteString.Char8                as B (elem, pack, unpack)
 import           Data.ByteString.Lazy.Char8           as BL (writeFile)
 import           Data.Functor                         ((<$>))
-import           Data.List                            (isPrefixOf, lookup)
+import           Data.List                            (isPrefixOf, isSuffixOf, lookup)
 import           Data.Monoid                          ((<>))
 import qualified Data.Text.Lazy                       as T
 import qualified Data.Text.Lazy.IO                    as TIO
@@ -21,7 +22,8 @@ import           Data.Time.Format                     (defaultTimeLocale,
 import           Prelude                              as P
 import           System.Directory                     (doesDirectoryExist,
                                                        doesFileExist,
-                                                       getDirectoryContents)
+                                                       getDirectoryContents,
+                                                       removeFile)
 import           System.Environment
 import           System.FilePath
 import           System.IO
@@ -49,11 +51,17 @@ import           Text.Blaze.Html.Renderer.Text        (renderHtml)
 import           Web.Scotty                           as S
 import           Web.Scotty.Login.Session
 
+import Data.String.Interpolate (i)
+import System.Exit
+import Control.Exception (catch)
+import Data.List.Split (splitOn)
+
 -- run with environment var PORT set to whatever port
 -- for auth, make a file "auth.txt"
 -- containing two lines: username and then password
 
-main = do envPort <- getEnv "PORT"
+main = do compileScss >>= \res -> unless res $ die "scss compilation failure"
+          envPort <- getEnv "PORT"
           !envHttpAuth <- getEnv "AUTH" -- True or False
           h <- openFile "auth.txt" ReadMode
           c <- hGetContents h
@@ -66,7 +74,7 @@ main = do envPort <- getEnv "PORT"
                 addHeaders [(B.pack "X-Clacks-Overhead", B.pack "GNU Terry Pratchett")]
               middleware logStdoutDev
               middleware $ staticPolicy $
-                hasPrefix "static/" -- <|> hasPrefix "served_files/"
+                hasPrefix "static/" <|> hasPrefix "static_src/" -- for sourcemaps in dev
               when (P.length l == 2 && authp) $ do
                 let usn = head l
                     passwd = l !! 1
@@ -74,6 +82,18 @@ main = do envPort <- getEnv "PORT"
                   (\u p -> return $ u == B.pack usn && p == B.pack passwd) " Welcome "
               routes
 
+----- scss build
+compileScss :: IO Bool
+compileScss = do
+  cssFilePaths <- filter (isSuffixOf ".scss") <$> getDirectoryContents "static_src/css"
+  -- remove files
+  (sequence_ $ removeFile . ("static/css" ++ ) <$> cssFilePaths) `catch` (\(e :: IOError) -> return ())
+  results <- sequence $ (\path -> system $ [i| scss static_src/css/#{path} static/css/#{minusExt path ++ ".css"} |]) <$> cssFilePaths
+  return $ all (== ExitSuccess) results
+    where
+      minusExt :: String -> String
+      minusExt path = concat $ init $ splitOn "." path
+------
 routes :: ScottyM ()
 routes = do S.get "/" $ blaze $ template "HOME" homePage
 
