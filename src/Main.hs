@@ -6,16 +6,13 @@ module Main where
 import           Pages
 import           Types
 
-import           Control.Concurrent                   (forkIO, threadDelay)
 import           Control.Monad
 import           Control.Monad.IO.Class               (liftIO)
 import           Data.ByteString.Char8                as B (elem, pack, unpack)
 import           Data.ByteString.Lazy.Char8           as BL (writeFile)
-import           Data.Functor                         ((<$>))
-import           Data.List                            (isPrefixOf, isSuffixOf, lookup)
+import           Data.List                            (isSuffixOf)
 import           Data.Monoid                          ((<>))
 import qualified Data.Text.Lazy                       as T
-import qualified Data.Text.Lazy.IO                    as TIO
 import           Data.Time.Clock.POSIX                (posixSecondsToUTCTime)
 import           Data.Time.Format                     (defaultTimeLocale,
                                                        formatTime)
@@ -39,8 +36,7 @@ import qualified System.Posix.Files                   as F
 import           System.Process
 
 import           Data.Time.Clock                      (NominalDiffTime)
-import           Network.Wai.Handler.Warp             (Settings (..),
-                                                       defaultSettings, setPort)
+import           Network.Wai.Handler.Warp             (defaultSettings, setPort)
 import           Network.Wai.Middleware.AddHeaders    (addHeaders)
 import qualified Network.Wai.Middleware.HttpAuth      as Auth
 import           Network.Wai.Middleware.RequestLogger

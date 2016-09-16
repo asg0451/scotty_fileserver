@@ -18,7 +18,7 @@ import           Text.Blaze.Html5.Attributes
 import qualified Text.Blaze.Html5.Attributes as A
 
 import           Data.List                   (sort)
-import           Data.Monoid
+
 import qualified Data.Text.Lazy              as T
 
 torrentStatusPage :: Html

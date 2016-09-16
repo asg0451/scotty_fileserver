@@ -38,7 +38,11 @@ var refresh = function (dataEscaped) {
             cell.innerHTML = c;
         };
 
-        fields(t).forEach(c => {r.insertCellContents(c);});
+        fields(t).forEach(c => r.insertCellContents(c));
+
+        if(fields(t)[4] != "0 kB/s") {
+            r.classList.add('uploading');
+        }
 
         var button = document.createElement("input");
         button.type = "button";

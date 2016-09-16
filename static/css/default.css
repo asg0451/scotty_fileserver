@@ -1,8 +1,6 @@
 html {
   position: relative;
   min-height: 100%; }
-  html p {
-    color: blue; }
 
 body {
   padding-bottom: 50px; }
@@ -33,6 +31,8 @@ td {
 
 table {
   width: 75%; }
+  table .uploading {
+    color: blue; }
 
 #customdropzone {
   width: 50%; }

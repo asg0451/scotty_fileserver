@@ -1,0 +1,55 @@
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    padding-bottom: 50px;
+}
+
+.footer {
+    text-align: center;
+}
+
+.footer a {
+    padding-left: 1%;
+    padding-right: 1%;
+    padding-top: 1%;
+}
+
+@media screen and (max-width: 767px) { /* phones */
+    .footer a {
+        font-size: 2.2vw;
+    }
+
+    .fs-body {
+        font-size: 2.5vw;
+    }
+}
+
+@media screen and (min-width: 992px) {
+    .footer a {
+        font-size: 1.2vw;
+    }
+
+    .fs-body {
+        font-size: 1.5vw;
+    }
+}
+
+td {
+    padding: 0px 10px 0px 10px;
+}
+
+table {
+  width: 75%;
+
+  .uploading {
+    color: blue;
+  }
+
+}
+
+#customdropzone {
+    width: 50%
+}
