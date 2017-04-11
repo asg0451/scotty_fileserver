@@ -51,6 +51,8 @@ import Data.String.Interpolate (i)
 import System.Exit
 import Control.Exception (catch)
 import Data.List.Split (splitOn)
+import Data.String
+import Data.Maybe
 
 -- run with environment var PORT set to whatever port
 -- for auth, make a file "auth.txt"
@@ -175,24 +177,34 @@ authedRoutes = do
 
 loginRoutes :: ScottyM ()
 loginRoutes = do
-  S.get "/login" $ S.html $ T.pack $ unlines
-    ["<form method=\"POST\" action=\"/login\">"
-    , "<input type=\"text\" name=\"username\">"
-    , "<input type=\"password\" name=\"password\">"
-    , "<input type=\"submit\" name=\"login\" value=\"login\">"
-    , "</form>"]
+  S.get "/login" $ do
+    params <- params
+    let redirect = T.unpack <$> lookup "redirect" params
+        redirect' = fromMaybe "/" redirect
+    S.html $ T.pack $ unlines
+      ["<form method=\"POST\" action=\"/login\">"
+      , "<input type=\"text\" name=\"username\">"
+      , "<input type=\"password\" name=\"password\">"
+      , "<input type=\"text\" style=\"display: none;\" name=\"redirect\" value=\"" <> redirect' <> "\">"
+      , "<input type=\"submit\" name=\"login\" value=\"login\">"
+      , "</form>"]
   S.post "/login" $ do
     (usn :: String) <- param "username"
     (pass :: String) <- param "password"
+    ps <- params
+    let redirectUrl = T.unpack <$> lookup "redirect" ps
+        redirectUrl' = maybe "/" urlDecode redirectUrl
     if usn == "guest" && pass == "password"
       then do addSession'
               liftIO $ print "adding session"
-              redirect "/"
+              redirect $ T.pack redirectUrl'
       else redirect "/denied"
 
   S.get "/denied" $ blaze $ do
                 p "ya gotta login man"
                 a ! href "/login" $ "login"
+
+  S.get "/logout" $ removeSession conf
 
 blaze = S.html . renderHtml
 
@@ -284,6 +296,7 @@ hGetContents' h = hGetContents h >>= \s -> length s `seq` return s
 conf :: SessionConfig
 conf = defaultSessionConfig { syncInterval       = 30 -- seconds
                             , expirationInterval = 1800 -- seconds
+                            , debugMode          = True
                             }
 
 {-
@@ -293,9 +306,14 @@ data SessionConfig = SessionConfig { dbName             :: String
                                    }
 -}
 
-authCheck' = authCheck  (redirect "/denied")
+authCheck' = authCheck (redirect "/denied")
 addSession' = addSession conf
 initializeCookieDb' = initializeCookieDb conf
 
-getAuthed  r a = S.get  r $ authCheck' a
+-- getAuthed :: String -> ActionT T.Text IO () -> ScottyM ()
+getAuthed  r a = S.get  (fromString r) $ authCheck (redirect $ T.pack $ "/login?redirect=" <> urlEncode r) a
 postAuthed r a = S.post r $ authCheck' a
+
+-- TODO
+urlEncode s = s
+urlDecode s = s

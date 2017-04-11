@@ -8,3 +8,5 @@ sessions.sqlite3
 sessions.sqlite3-shm
 sessions.sqlite3-wal
 .stack-work/*
+.sass-cache/*
+*.css.map

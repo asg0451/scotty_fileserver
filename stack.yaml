@@ -3,7 +3,7 @@ packages:
 - '.'
 - location:
     git: git@github.com:asg0451/scotty-login-session
-    commit: 632adb71d1c3ecf985ca4f4f689b5a7277821f27
+    commit: 91b0971373ec5288badd9cedf8e668239bdd1b24 # 632adb71d1c3ecf985ca4f4f689b5a7277821f27
 extra-deps:
 - scotty-cookie-0.1.0.3
 - posix-escape-0.1
