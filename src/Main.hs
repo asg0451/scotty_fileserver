@@ -182,12 +182,18 @@ loginRoutes = do
     let redirect = T.unpack <$> lookup "redirect" params
         redirect' = fromMaybe "/" redirect
     S.html $ T.pack $ unlines
-      ["<form method=\"POST\" action=\"/login\">"
+      ["<div class=form-wrapper>"
+      , "<form method=\"POST\" action=\"/login\">"
       , "<input type=\"text\" name=\"username\">"
       , "<input type=\"password\" name=\"password\">"
       , "<input type=\"text\" style=\"display: none;\" name=\"redirect\" value=\"" <> redirect' <> "\">"
       , "<input type=\"submit\" name=\"login\" value=\"login\">"
-      , "</form>"]
+      , "</form>"
+      , "</div>"
+      , "<script> "
+      , "(function() { document.querySelector('form input[type=\"text\"]').focus(); })()"
+      , "</script>"
+      ]
   S.post "/login" $ do
     (usn :: String) <- param "username"
     (pass :: String) <- param "password"
