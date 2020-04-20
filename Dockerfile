@@ -14,7 +14,7 @@ ARG SSH_KHS
 RUN mkdir -p /root/.ssh
 RUN echo "${SSH_PRIVATE_KEY}" >> /root/.ssh/id_rsa
 RUN chmod 600 /root/.ssh/id_rsa
-RUN echo "${SSH_KHS}" >> /root/.ssh/known_hosts
+RUN echo "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
 RUN curl -L https://github.com/sass/dart-sass/releases/download/1.26.3/dart-sass-1.26.3-linux-x64.tar.gz > /tmp/sass.tar.gz
 RUN tar xzvf /tmp/sass.tar.gz -C /tmp/

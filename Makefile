@@ -3,7 +3,6 @@ image_tag=one-fileserver
 bind_port=4242
 
 SSH_PRIVATE_KEY=`cat ~/.ssh/id_rsa`
-SSH_KHS=`cat ~/.ssh/known_hosts`
 
 registry=milesfrankel.xyz:5000
 # docker login ^. usn asg0451
@@ -21,13 +20,11 @@ build: .built
 	docker pull $(image_tag_with_registry):latest || true
 	docker build -t $(image_tag_with_registry):build \
 		--build-arg SSH_PRIVATE_KEY="$(SSH_PRIVATE_KEY)" \
-		--build-arg SSH_KHS="$(SSH_KHS)" \
 		--cache-from $(image_tag_with_registry):build \
 		--target build \
 		.
 	docker build -t $(image_tag_with_registry):latest \
 		--build-arg SSH_PRIVATE_KEY="$(SSH_PRIVATE_KEY)" \
-		--build-arg SSH_KHS="$(SSH_KHS)" \
 		--cache-from $(image_tag_with_registry):build \
 		--cache-from $(image_tag_with_registry):run \
 		--target run \
