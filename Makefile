@@ -38,11 +38,17 @@ build: .built
 	touch .built
 
 run: .built stop
-	docker run -p $(bind_port):$(bind_port)  --name $(container_name) $(image_tag_with_registry)
+	docker run -p $(bind_port):$(bind_port) \
+		--name $(container_name) \
+		-v ~/served_files:/app/served_files \
+		$(image_tag_with_registry)
 
 daemonize: .built stop
-	docker run -d -p $(bind_port):$(bind_port)  --name $(container_name) $(image_tag_with_registry)
-	docker ps -a
+	docker run -p -d $(bind_port):$(bind_port) \
+		--name $(container_name) \
+		-v ~/served_files:/app/served_files \
+		$(image_tag_with_registry)
+	docker ps
 
 stop:
 	docker stop $(container_name) || docker kill $(container_name) || true
