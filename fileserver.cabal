@@ -40,6 +40,7 @@ executable one
                      , interpolate
                      , split
                      , process
+                     , aeson
 -- for static site
                      , scotty-login-session
 

@@ -53,6 +53,14 @@ import Control.Exception (catch)
 import Data.List.Split (splitOn)
 import Data.String
 import Data.Maybe
+import Data.Aeson
+
+data SlackTestMessage = SlackTestMessage {
+  token :: String, challenge :: String, _type :: String
+  } deriving Show
+instance FromJSON SlackTestMessage where
+  parseJSON  = withObject "SlackTestMessage" $ \o -> SlackTestMessage
+    <$> o .: "token" <*> o .: "challenge" <*> o .: "type"
 
 -- run with environment var PORT set to whatever port
 -- for auth, make a file "auth.txt"
@@ -101,6 +109,8 @@ routes = do S.get "/" $ blaze $ template "HOME" homePage
 
             fileRoutes
 
+            slackRoutes
+
             S.notFound $ html "not here"
 
 
@@ -119,6 +129,14 @@ fileRoutes = do
                dir <- param "1"
                liftIO $ print $ "opening dir: " ++ dir
                serveDir dir
+
+
+
+slackRoutes :: ScottyM ()
+slackRoutes = do
+  post "/slackthing/events/" $ do
+    poop <- jsonData
+    text $ T.pack $ challenge $ fromJust poop
 
 
 authedRoutes :: ScottyM ()
